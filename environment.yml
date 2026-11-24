@@ -1,0 +1,29 @@
+# conda env create -f environment.yml && conda activate coda
+# Tested on Linux with CUDA 12.1 (NVIDIA H200). For another CUDA version change the two wheel indices below.
+name: coda
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+      - --extra-index-url https://download.pytorch.org/whl/cu121
+      - --find-links https://data.pyg.org/whl/torch-2.1.0+cu121.html
+      - torch==2.1.0
+      - numpy==1.26.4
+      - torch_scatter==2.1.2
+      - torch_sparse==0.6.18
+      - torch_cluster==1.6.3
+      - torch_geometric==2.2.0
+      - rdkit==2025.9.2
+      - networkx==2.8.8
+      - scipy==1.13.1
+      - scikit-learn==1.6.1
+      - pandas==2.3.3
+      - munch==2.5.0
+      - easydict==1.13
+      - pyyaml==6.0.3
+      - tqdm==4.66.1
+      - gdown==5.2.2
+      - huggingface_hub
+      - pytest

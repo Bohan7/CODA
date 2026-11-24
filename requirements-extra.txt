@@ -1,0 +1,4 @@
+# Installed without their dependency pins (both would otherwise pull in incompatible versions):
+#   pip install --no-deps -r requirements-extra.txt
+fcd-torch==1.0.7          # FCD metric (generation/evaluation/mol_metrics.py)
+dive-into-graphs==1.1.0   # imported by the GOOD-SST2 dataset class (classification/GOOD)

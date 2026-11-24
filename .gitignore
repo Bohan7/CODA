@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# data, checkpoints and outputs
+/data/
+generation/data/*.pkl
+generation/data/*.npz
+generation/data/*.txt
+generation/checkpoints
+generation/samples
+generation/runs
+generation/.cache
+/results/
+*.partial.pkl
+*.partial.pkl.tmp

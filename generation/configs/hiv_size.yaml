@@ -1,0 +1,67 @@
+# GOOD-HIV, size covariate shift. Molecules with at most 70 heavy atoms. Exploration is over the node count
+# (test molecules are smaller than training molecules, hence a negative sampler.ood_size).
+data:
+  data: GoodHivSize
+  dir: ./data
+  node_features: atom
+  batch_size: 256
+  min_node_num: 2          # lower bound of the node-count prior when sampler.ood_size != 0
+  max_node_num: 70
+  max_feat_num: 10
+  perm_mix: True
+
+sde:
+  x:   {type: VP, beta_min: 0.1, beta_max: 1.0, num_scales: 1000}
+  adj: {type: VE, beta_min: 0.2, beta_max: 1.0, num_scales: 1000}
+
+model:                      # score network s_theta
+  num_layers: 9
+  input_dims: {E: 2}        # adjacency powers A, A^2 are the input edge channels
+  hidden_mlp_dims: {X: 256, E: 128, y: 128}
+  hidden_dims: {dx: 256, de: 64, dy: 64, n_head: 8, dim_ffX: 256, dim_ffE: 128}
+
+classifier:                 # time-dependent classifier phi_t (same backbone)
+  num_layers: 1
+  num_classes: 2
+  num_epochs: 30000         # upper bound; the best-validation epoch is kept
+  warmup_epochs: 101        # checkpoints are kept only after this many epochs
+  class_counts: [20000, 693]  # inverse-frequency class weights of the loss
+  val_per_class: [3758, 231]  # held-out training molecules per class (inactive, active)
+
+train:
+  num_epochs: 500         # the released score network was trained for this many epochs
+  save_interval: 500
+  lambda_train: 5
+  reduce_mean: False
+  lr: 2.0e-4
+  lr_schedule: False
+  lr_decay: 0.999
+  ema: 0.999
+  weight_decay: 1.0e-12
+  grad_norm: 1.0
+  eps: 1.0e-5
+  optimizer: adamw
+
+ckpt:
+  score: checkpoints/hiv_size/score.pth
+  classifier: checkpoints/hiv_size/classifier.pth
+
+sampler:
+  ood: 0.0                 # exploration strength lambda in [0, 1); 0 = class-conditional GDSS (GDSS-CC)
+  ood_size: -30               # shift of the largest node count; != 0 switches to the uniform node-count prior
+                            # -30 -> molecules with 2..40 atoms; paper grid: ood_size in {-60, -50, -40, -30}
+  weight_x_classifier: 0.1  # r_1, guidance weight on node features
+  weight_adj_classifier: 0.0  # r_2, guidance weight on the adjacency matrix
+  predictor: Reverse
+  corrector: None
+  snr: 0.0
+  scale_eps: 0.0
+
+sample:
+  n_graphs: 26000
+  batch_size: 1000
+  class_ratio: [25, 1]
+  use_ema: False
+  noise_removal: True
+  eps: 1.0e-3
+  seed: 42

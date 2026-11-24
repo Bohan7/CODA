@@ -1,0 +1,63 @@
+# GOOD-Motif, basis covariate shift. Paper grid: sampler.ood in {0.01, ..., 0.05}; reported setting: 0.04.
+data:
+  data: good_motif-basis-covariate
+  dir: ./data
+  node_features: degree
+  batch_size: 128
+  min_node_num: 8          # lower bound of the node-count prior when sampler.ood_size != 0
+  max_node_num: 35
+  max_feat_num: 18
+  perm_mix: True
+
+sde:
+  x:   {type: VP, beta_min: 0.1, beta_max: 1.0, num_scales: 1000}
+  adj: {type: VP, beta_min: 0.1, beta_max: 1.0, num_scales: 1000}
+
+model:                      # score network s_theta
+  num_layers: 8
+  input_dims: {E: 2}        # adjacency powers A, A^2 are the input edge channels
+  hidden_mlp_dims: {X: 128, E: 64, y: 128}
+  hidden_dims: {dx: 256, de: 64, dy: 64, n_head: 8, dim_ffX: 256, dim_ffE: 64}
+
+classifier:                 # time-dependent classifier phi_t (same backbone)
+  num_layers: 3
+  num_classes: 3
+  num_epochs: 30000         # upper bound; the best-validation epoch is kept
+  warmup_epochs: 101        # checkpoints are kept only after this many epochs
+
+train:
+  num_epochs: 28000         # the released score network was trained for this many epochs
+  save_interval: 2000
+  lambda_train: 5
+  reduce_mean: False
+  lr: 4.0e-4
+  lr_schedule: False
+  lr_decay: 0.999
+  ema: 0.999
+  weight_decay: 1.0e-12
+  grad_norm: 1.0
+  eps: 1.0e-5
+  optimizer: adamw
+
+ckpt:
+  score: checkpoints/motif_basis/score.pth
+  classifier: checkpoints/motif_basis/classifier.pth
+
+sampler:
+  ood: 0.04                # exploration strength lambda in [0, 1); 0 = class-conditional GDSS (GDSS-CC)
+  ood_size: 0               # shift of the largest node count; != 0 switches to the uniform node-count prior
+  weight_x_classifier: 0.5  # r_1, guidance weight on node features
+  weight_adj_classifier: 0.0  # r_2, guidance weight on the adjacency matrix
+  predictor: Euler
+  corrector: Langevin
+  snr: 0.2
+  scale_eps: 0.7
+
+sample:
+  n_graphs: 18000
+  batch_size: 3000
+  class_ratio: [1, 1, 1]
+  use_ema: True
+  noise_removal: True
+  eps: 1.0e-4
+  seed: 42
