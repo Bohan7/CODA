@@ -6,6 +6,8 @@ Official implementation of **CODA**, accepted at **KDD 2027**:
 > Bohan Wang, Yurui Chang, Wei Jin, Lu Lin
 > ACM SIGKDD Conference on Knowledge Discovery and Data Mining (KDD), 2027 · [arXiv:2410.17506](https://arxiv.org/abs/2410.17506)
 
+<p align="center"><img src="figures/coda_schematic.png" width="95%" alt="Overview of CODA"></p>
+
 CODA mitigates graph covariate shift by *generating* additional training graphs. A score-based graph diffusion
 model is steered by a time-dependent classifier, so that generated graphs keep the label-determining
 (stable) patterns, and by an exploration strength λ that tempers the class-conditional score and moves
