@@ -36,7 +36,7 @@ DATASETS = {
                          test_epoch=0, var_weight=0.0, optimizer='adam', seed=133,
                          aug=dict(min_confidence=0.9, max_per_class=(12000, 500))),
     'hiv_size': dict(good='GOODHIV', domain='size', type='mol', num_classes=1, task='binary_auc',
-                     backbone='vGIN', model_layer=3, epochs=200, milestones=[150], lr=1e-3, batch_size=32,
+                     backbone='vGIN', model_layer=3, epochs=100, milestones=[], lr=1e-3, batch_size=32,
                      test_epoch=0, var_weight=0.0, optimizer='adam', seed=133,
                      aug=dict(min_confidence=None, max_per_class=(5000, 200))),
 }

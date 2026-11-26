@@ -20,9 +20,9 @@ model:                      # score network s_theta
   hidden_dims: {dx: 256, de: 64, dy: 64, n_head: 8, dim_ffX: 256, dim_ffE: 64}
 
 classifier:                 # time-dependent classifier phi_t (same backbone)
-  num_layers: 3
+  num_layers: 5
   num_classes: 3
-  num_epochs: 30000         # upper bound; the best-validation epoch is kept
+  num_epochs: 800           # the best-validation epoch is kept (epoch 353 for the released classifier)
   warmup_epochs: 101        # checkpoints are kept only after this many epochs
 
 train:

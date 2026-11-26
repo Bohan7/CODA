@@ -12,7 +12,7 @@ steps and classifier guidance on the node features only (`weight_adj_classifier 
 
 | split | config | score net (layers / epochs) | classifier (layers) | SDE X / A | solver | r₁ | generated set |
 |---|---|---|---|---|---|---|---|
-| Motif-basis | `motif_basis.yaml` | 8 / 28,000 | 3 | VP(0.1, 1) / VP(0.1, 1) | Euler–Maruyama + Langevin (snr 0.2, scale 0.7) | 0.5 | 18,000 graphs, 3 classes |
+| Motif-basis | `motif_basis.yaml` | 8 / 28,000 | 5 | VP(0.1, 1) / VP(0.1, 1) | Euler–Maruyama + Langevin (snr 0.2, scale 0.7) | 0.5 | 18,000 graphs, 3 classes |
 | Motif-size | `motif_size.yaml` | 8 / 28,000 | 3 | VP(0.1, 1) / VP(0.1, 1) | Euler–Maruyama + Langevin (snr 0.2, scale 0.7) | 0.5 | 18,000 graphs, 3 classes |
 | CMNIST-color | `cmnist_color.yaml` | 8 / 20,000 | 3 | VP(0.1, 1) / VP(0.1, 1) | Euler–Maruyama + Langevin (snr 0.2, scale 0.7) | 0.5 | 42,000 graphs, 10 classes |
 | SST2-length | `sst2_length.yaml` | 8 / 2,000 | 3 | VP(0.1, 1) / VP(0.1, 1) | Euler–Maruyama | 0.5 | 25,000 graphs, 2 classes |
@@ -31,19 +31,18 @@ steps and classifier guidance on the node features only (`weight_adj_classifier 
 |---|---|---|
 | Motif-basis | `sampler.ood` ∈ {0.01, …, 0.05} | 0.04 |
 | CMNIST-color | `sampler.ood` ∈ {0.05, 0.1} | 0.05 |
-| HIV-scaffold | `sampler.ood` ∈ {0.1, 0.2, 0.3}, molecules with 2–30 atoms (`sampler.ood_size=-20`) | 0.1 |
+| HIV-scaffold | `sampler.ood` ∈ {0.1, 0.2, 0.3}, node-count prior Uniform{2, …, 30}, i.e. at most 30 atoms (`sampler.ood_size=-20`) | 0.1 |
 | Motif-size | `sampler.ood_size` ∈ {1, …, 5} (the paper reports it as λ = 0.01 per added node) | 2 |
 | SST2-length | `sampler.ood_size` ∈ {1, …, 14} (λ = 0.01 per added node) | 6 |
-| HIV-size | `sampler.ood_size` ∈ {-60, -50, -40, -30}: molecules with 2–10, 2–20, 2–30, 2–40 atoms (training molecules have up to 70) | -30 |
+| HIV-size | `sampler.ood_size` ∈ {-10, …, -50} (the paper reports it as λ = 0.01 per 10 removed nodes): node-count prior Uniform{`data.min_node_num`, …, 70 + ood_size}, i.e. at most 60, 50, 40, 30 or 20 atoms (training molecules have up to 70) | -30 with `data.min_node_num` = 20: Uniform{20, …, 40}, i.e. at most 40 atoms |
 
 `sampler.ood=0 sampler.ood_size=0` turns exploration off, which gives plain class-conditional sampling with
 classifier guidance (GDSS-CC in the paper).
 
-**GPU memory.** Sampling needs roughly 24 kB of GPU memory per node pair, i.e.
-`batch_size × max_node_num² × 24 kB` (about 87 GB for Motif-basis at the default batch of 3,000). The default
-batch sizes were chosen for a 141 GB GPU (NVIDIA H200); reduce `sample.batch_size` on smaller GPUs
-(`sample.n_graphs` must be a multiple of it). The batch size changes which random numbers a graph receives,
-not the distribution of the generated set.
+**GPU memory.** Sampling memory grows with `batch_size × max_node_num²`. The default batch sizes were chosen
+for a 141 GB GPU (NVIDIA H200); Motif-basis, whose classifier has 5 layers, occupies about 130 GB of it at the
+default batch of 3,000. Reduce `sample.batch_size` on smaller GPUs (`sample.n_graphs` must be a multiple of
+it). The batch size changes which random numbers a graph receives, not the distribution of the generated set.
 
 ### 1.2 Downstream classification (stage 2)
 
@@ -57,10 +56,10 @@ seed + 10, …
 | CMNIST-color | GIN-Virtual | 5 | 100 | 1e-3 | – | 128 | 0 | AdamW (amsgrad) | 676 |
 | SST2-length | GIN-Virtual | 3 | 200 | 1e-3 | 150 | 32 | 0 | AdamW (amsgrad) | 676 |
 | HIV-scaffold | GIN-Virtual | 3 | 200 | 1e-4 | 150 | 32 | 0 | Adam | 133 |
-| HIV-size | GIN-Virtual | 3 | 200 | 1e-3 | 150 | 32 | 0 | Adam | 133 |
+| HIV-size | GIN-Virtual | 3 | 100 | 1e-3 | – | 32 | 0 | Adam | 133 |
 
-Hidden size 300, dropout 0.5, no weight decay, mean pooling. On SST2-length and HIV-size the depth, epochs,
-learning-rate schedule and batch size are those of the ERM configuration of the GOOD benchmark.
+Hidden size 300, dropout 0.5, no weight decay, mean pooling. On SST2-length the depth, epochs, learning-rate
+schedule and batch size are those of the ERM configuration of the GOOD benchmark.
 The variance penalty (`--var_weight`) is the variance between the mean loss on the original and on the generated
 graphs of a batch, added to the loss.
 
@@ -95,7 +94,7 @@ R=results
 (cd generation && python main.py sample --config configs/cmnist_color.yaml --out samples/cmnist_color/lam0.05)
 (cd generation && python main.py sample --config configs/sst2_length.yaml  --out samples/sst2_length/size6)
 (cd generation && python main.py sample --config configs/hiv_scaffold.yaml --out samples/hiv_scaffold/lam0.1_n2-30)
-(cd generation && python main.py sample --config configs/hiv_size.yaml     --out samples/hiv_size/n2-40)
+(cd generation && python main.py sample --config configs/hiv_size.yaml     --out samples/hiv_size/n20-40)
 # other points of the grids, e.g.
 (cd generation && python main.py sample --config configs/motif_basis.yaml  --out samples/motif_basis/lam0.02 --set sampler.ood=0.02)
 (cd generation && python main.py sample --config configs/sst2_length.yaml  --out samples/sst2_length/size9  --set sampler.ood_size=9)
@@ -106,7 +105,7 @@ R=results
 (cd classification && python train.py --dataset cmnist_color --aug ../$S/cmnist_color/lam0.05.pkl       --trials 10 --out ../$R/cmnist_color/coda/results.json)
 (cd classification && python train.py --dataset sst2_length  --aug ../$S/sst2_length/size6.pkl          --trials 10 --out ../$R/sst2_length/coda/results.json)
 (cd classification && python train.py --dataset hiv_scaffold --aug ../$S/hiv_scaffold/lam0.1_n2-30.txt  --trials 10 --out ../$R/hiv_scaffold/coda/results.json)
-(cd classification && python train.py --dataset hiv_size     --aug ../$S/hiv_size/n2-40.txt             --trials 10 --out ../$R/hiv_size/coda/results.json)
+(cd classification && python train.py --dataset hiv_size     --aug ../$S/hiv_size/n20-40.txt            --trials 10 --out ../$R/hiv_size/coda/results.json)
 
 # the same pipeline without generated graphs (ERM)
 (cd classification && python train.py --dataset motif_basis --trials 10 --out ../$R/motif_basis/erm/results.json)

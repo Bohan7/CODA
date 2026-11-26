@@ -5,7 +5,7 @@ data:
   dir: ./data
   node_features: atom
   batch_size: 256
-  min_node_num: 2          # lower bound of the node-count prior when sampler.ood_size != 0
+  min_node_num: 20         # lower bound of the node-count prior when sampler.ood_size != 0
   max_node_num: 70
   max_feat_num: 10
   perm_mix: True
@@ -48,8 +48,9 @@ ckpt:
 
 sampler:
   ood: 0.0                 # exploration strength lambda in [0, 1); 0 = class-conditional GDSS (GDSS-CC)
-  ood_size: -30               # shift of the largest node count; != 0 switches to the uniform node-count prior
-                            # -30 -> molecules with 2..40 atoms; paper grid: ood_size in {-60, -50, -40, -30}
+  ood_size: -30             # shift of the largest node count; != 0 switches to the uniform node-count prior
+                            # -30 -> node-count prior Uniform{20..40} (data.min_node_num = 20), i.e. at most 40 atoms;
+                            # paper grid: ood_size in {-10, ..., -50} (lambda = 0.01 per 10 removed nodes)
   weight_x_classifier: 0.1  # r_1, guidance weight on node features
   weight_adj_classifier: 0.0  # r_2, guidance weight on the adjacency matrix
   predictor: Reverse

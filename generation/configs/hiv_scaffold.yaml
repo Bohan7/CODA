@@ -1,5 +1,5 @@
 # GOOD-HIV, scaffold covariate shift. Molecules with at most 50 heavy atoms from a 10-atom-type vocabulary.
-# Paper grid: sampler.ood in {0.1, 0.2, 0.3}, molecules with 2 to 30 atoms (ood_size = -20).
+# Paper grid: sampler.ood in {0.1, 0.2, 0.3}, node-count prior Uniform{2, ..., 30}, i.e. at most 30 atoms (ood_size = -20).
 data:
   data: GoodHiv
   dir: ./data
